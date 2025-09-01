@@ -40,4 +40,17 @@ contract RaffleTest is Test {
     function testRaffleStateIsOpen() external view {
         assert(raffle.getRaffleState() == Raffle.RaffleState.OPEN);
     }
+
+    function testEnterRafflePlayer() external {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}();
+        address player = raffle.getPlayer(0);
+        assertEq(player, PLAYER);
+    }
+
+    function testEnterRaffleRevert() external {
+        vm.prank(PLAYER);
+        vm.expectRevert();
+        raffle.enterRaffle();
+    }
 }

@@ -8,7 +8,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/inter
 
 contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error NotEnoughEthSent();
-    error NotEnoughTimePassed();
+    //error NotEnoughTimePassed();
 
     enum RaffleState {
         OPEN,
