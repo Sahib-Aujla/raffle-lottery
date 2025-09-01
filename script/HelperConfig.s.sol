@@ -4,6 +4,8 @@ pragma solidity ^0.8.19;
 import {Script} from "forge-std/Script.sol";
 
 contract HelperConfig is Script {
+    error HelperConfig__InvalidChainId();
+
     struct NetworkConfig {
         uint256 subscriptionId;
         bytes32 gasLane;
@@ -15,12 +17,30 @@ contract HelperConfig is Script {
         address account;
     }
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11155111;
+    uint256 public constant LOCAL_CHAIN_ID = 31337;
     NetworkConfig public localNetworkConfig;
     mapping(uint256 chainId => NetworkConfig) public networkConfigs;
 
     constructor() {
         networkConfigs[ETH_SEPOLIA_CHAIN_ID] = getSepoliaEthConfig();
     }
+
+    function getConfigByChainId(
+        uint256 chainId
+    ) public returns (NetworkConfig memory) {
+        if (networkConfigs[chainId].vrfCoordinatorV2_5 != address(0)) {
+            return networkConfigs[chainId];
+        } else if (chainId == LOCAL_CHAIN_ID) {
+            return getOrCreateAnvilEthConfig();
+        } else {
+            revert HelperConfig__InvalidChainId();
+        }
+    }
+
+    function getOrCreateAnvilEthConfig()
+        public
+        returns (NetworkConfig memory)
+    {}
 
     function getSepoliaEthConfig()
         public
