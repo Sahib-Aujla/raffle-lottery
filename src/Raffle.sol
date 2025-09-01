@@ -6,20 +6,50 @@ import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFCo
 import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.sol";
 
-contract Raffle {
+contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error NotEnoughEthSent();
     error NotEnoughTimePassed();
+    enum RaffleState {
+        OPEN,
+        CALCULATING
+    }
 
+    event RequestedRaffleWinner(uint256 indexed requestId);
     event RaffleEntered(address indexed player);
+    event Winner(address indexed winner);
+
     uint256 private immutable i_entranceFee;
     uint256 private immutable i_interval;
     address payable[] private s_players;
-    uint256 private lastTimestamp;
+    uint256 private immutable i_subscriptionId;
+    bytes32 private immutable i_gasLane;
+    RaffleState private s_raffleState;
+    uint32 private immutable i_callbackGasLimit;
+    uint256 private s_lastTimeStamp;
+    uint16 private constant REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant NUM_WORDS = 1;
+    address private s_recentWinner;
 
-    constructor(uint256 entranceFee, uint256 interval) {
-        i_entranceFee = entranceFee;
+    /* Functions */
+    constructor(
+        uint256 subscriptionId,
+        bytes32 gasLane, // keyHash
+        uint256 interval,
+        uint256 entranceFee,
+        uint32 callbackGasLimit,
+        address vrfCoordinatorV2
+    ) VRFConsumerBaseV2Plus(vrfCoordinatorV2) {
+        i_gasLane = gasLane;
         i_interval = interval;
-        lastTimestamp = block.timestamp;
+        i_subscriptionId = subscriptionId;
+        i_entranceFee = entranceFee;
+        s_raffleState = RaffleState.OPEN;
+        s_lastTimeStamp = block.timestamp;
+        i_callbackGasLimit = callbackGasLimit;
+        // uint256 balance = address(this).balance;
+        // if (balance > 0) {
+        //     payable(msg.sender).transfer(balance);
+        // }
     }
 
     function enterRaffle() external payable {
@@ -30,12 +60,79 @@ contract Raffle {
         emit RaffleEntered(msg.sender);
     }
 
-    function pickWinner() external {
-        if (block.timestamp - lastTimestamp < i_interval) {
+    // function pickWinner() external {
+    //     if (block.timestamp - s_lastTimeStamp < i_interval) {
+    //         revert NotEnoughTimePassed();
+    //     }
+    //     s_raffleState = RaffleState.CALCULATING;
+    //     uint256 requestId = s_vrfCoordinator.requestRandomWords(
+    //         VRFV2PlusClient.RandomWordsRequest({
+    //             keyHash: i_gasLane,
+    //             subId: i_subscriptionId,
+    //             requestConfirmations: REQUEST_CONFIRMATIONS,
+    //             callbackGasLimit: i_callbackGasLimit,
+    //             numWords: NUM_WORDS,
+    //             extraArgs: VRFV2PlusClient._argsToBytes(
+    //                 // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
+    //                 VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+    //             )
+    //         })
+    //     );
+    //     // Quiz... is this redundant?
+    //     emit RequestedRaffleWinner(requestId);
+    //     s_lastTimeStamp = block.timestamp;
+    // }
+
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) internal virtual override {
+        uint indexedWinner = randomWords[0] % s_players.length;
+        address payable recentWinner = s_players[indexedWinner];
+
+        s_recentWinner = recentWinner;
+        s_players = new address payable[](0);
+
+        s_raffleState = RaffleState.OPEN;
+        (bool success, ) = recentWinner.call{value: address(this).balance}("");
+        if (!success) {
+            revert();
+        }
+        emit Winner(recentWinner);
+    }
+
+    function checkUpkeep(
+        bytes calldata checkData
+    ) external returns (bool upkeepNeeded, bytes memory performData) {
+        bool isOpen = RaffleState.OPEN == s_raffleState;
+        bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
+        bool hasPlayers = s_players.length > 0;
+        bool hasBalance = address(this).balance > 0;
+        upkeepNeeded = (timePassed && isOpen && hasBalance && hasPlayers);
+        return (upkeepNeeded, "0x0"); // can we comment this out?
+    }
+
+    function performUpkeep(bytes calldata performData) external {
+        if (block.timestamp - s_lastTimeStamp < i_interval) {
             revert NotEnoughTimePassed();
         }
-
-        lastTimestamp = block.timestamp;
+        s_raffleState = RaffleState.CALCULATING;
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: i_gasLane,
+                subId: i_subscriptionId,
+                requestConfirmations: REQUEST_CONFIRMATIONS,
+                callbackGasLimit: i_callbackGasLimit,
+                numWords: NUM_WORDS,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
+                )
+            })
+        );
+        // Quiz... is this redundant?
+        emit RequestedRaffleWinner(requestId);
+        s_lastTimeStamp = block.timestamp;
     }
 
     //Getter Function
