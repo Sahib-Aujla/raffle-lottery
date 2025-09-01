@@ -9,6 +9,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/inter
 contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error NotEnoughEthSent();
     error NotEnoughTimePassed();
+
     enum RaffleState {
         OPEN,
         CALCULATING
@@ -83,14 +84,11 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     //     s_lastTimeStamp = block.timestamp;
     // }
 
-    function fulfillRandomWords(
-        uint256 requestId,
-        uint256[] calldata randomWords
-    ) internal virtual override {
+    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual override {
         if (s_requestId != requestId) {
             revert();
         }
-        uint indexedWinner = randomWords[0] % s_players.length;
+        uint256 indexedWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexedWinner];
 
         s_recentWinner = recentWinner;
@@ -99,7 +97,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         s_raffleState = RaffleState.OPEN;
         emit Winner(recentWinner);
 
-        (bool success, ) = recentWinner.call{value: address(this).balance}("");
+        (bool success,) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert();
         }
@@ -116,8 +114,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         return (upkeepNeeded, "0x0");
     }
 
-    function performUpkeep(bytes calldata /*performData*/) external {
-        (bool updateUpkeep, ) = checkUpkeep("");
+    function performUpkeep(bytes calldata /*performData*/ ) external {
+        (bool updateUpkeep,) = checkUpkeep("");
         if (!updateUpkeep) {
             revert();
         }
