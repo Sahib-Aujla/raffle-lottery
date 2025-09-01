@@ -9,6 +9,7 @@ import {AutomationCompatibleInterface} from "@chainlink/contracts/src/v0.8/inter
 contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error NotEnoughEthSent();
     //error NotEnoughTimePassed();
+    error Raffle__RaffleNotOpen();
 
     enum RaffleState {
         OPEN,
@@ -117,7 +118,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     function performUpkeep(bytes calldata /*performData*/ ) external {
         (bool updateUpkeep,) = checkUpkeep("");
         if (!updateUpkeep) {
-            revert();
+            revert Raffle__RaffleNotOpen();
         }
         s_raffleState = RaffleState.CALCULATING;
 

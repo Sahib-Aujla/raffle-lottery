@@ -10,6 +10,7 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 contract RaffleTest is Test {
     Raffle raffle;
     HelperConfig helperConfig;
+    event RaffleEntered(address indexed player);
 
     uint256 subscriptionId;
     bytes32 gasLane;
@@ -52,5 +53,27 @@ contract RaffleTest is Test {
         vm.prank(PLAYER);
         vm.expectRevert();
         raffle.enterRaffle();
+    }
+
+    function testRaffleEnteredEvent() external {
+        vm.prank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(raffle));
+        emit RaffleEntered(PLAYER);
+
+        raffle.enterRaffle{value: raffleEntranceFee}();
+    }
+
+    function testDontAllowPlayersToEnterWhileRaffleIsCalculating() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}();
+        vm.warp(block.timestamp + automationUpdateInterval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+
+        // Act / Assert
+        vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}();
     }
 }
