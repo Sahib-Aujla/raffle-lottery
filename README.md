@@ -1,66 +1,80 @@
-## Foundry
+# Provably Random Raffle Contract
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A provably random smart contract lottery using Chainlink VRF and Automation.
 
-Foundry consists of:
+## About
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+This project implements a verifiably random raffle/lottery system on the blockchain with the following features:
 
-## Documentation
+- Users can enter the raffle by paying for a ticket 
+- After X time period, the raffle automatically draws a winner
+- Uses Chainlink VRF (Verifiable Random Function) for provably random winner selection
+- Uses Chainlink Automation for automatic execution
+- Built using the Foundry framework
 
-https://book.getfoundry.sh/
+## Getting Started
 
-## Usage
+### Requirements
+
+- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [foundry](https://getfoundry.sh/)
+
+### Installation
+
+```sh
+forge install
+```
 
 ### Build
 
-```shell
-$ forge build
+```sh
+forge build
 ```
 
 ### Test
 
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
+```sh
+forge test
 ```
 
 ### Deploy
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+```sh
+forge script script/DeployRaffle.s.sol --rpc-url <your_rpc_url> --private-key <your_private_key>
 ```
 
-### Cast
+## Usage
 
-```shell
-$ cast <subcommand>
+1. Deploy contract
+2. Fund contract with LINK
+3. Users can enter raffle with `enterRaffle()`
+4. Wait for Chainlink Automation to call `performUpkeep()`
+
+## Testing
+
+```sh
+forge test
 ```
 
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+For unit tests:
+```sh
+forge test --match-test test*
 ```
+
+For integration tests:
+```sh
+forge test --match-test testFork*
+```
+
+For gas reports:
+```sh
+forge snapshot
+```
+
+## Security
+
+This project is provided as is. Use at your own risk.
+
+## License
+
+This project is licensed under MIT.
