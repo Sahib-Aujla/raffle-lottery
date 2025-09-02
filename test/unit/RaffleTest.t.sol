@@ -10,6 +10,7 @@ import {HelperConfig} from "../../script/HelperConfig.s.sol";
 contract RaffleTest is Test {
     Raffle raffle;
     HelperConfig helperConfig;
+
     event RaffleEntered(address indexed player);
 
     uint256 subscriptionId;

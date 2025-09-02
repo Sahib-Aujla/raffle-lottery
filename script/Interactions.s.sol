@@ -12,23 +12,15 @@ import {CodeConstants} from "./HelperConfig.s.sol";
 contract CreateSubscription is Script {
     function createSubscriptionUsingConfig() public returns (uint256, address) {
         HelperConfig helperConfig = new HelperConfig();
-        address vrfCoordinatorV2_5 = helperConfig
-            .getConfigByChainId(block.chainid)
-            .vrfCoordinatorV2_5;
-        address account = helperConfig
-            .getConfigByChainId(block.chainid)
-            .account;
+        address vrfCoordinatorV2_5 = helperConfig.getConfigByChainId(block.chainid).vrfCoordinatorV2_5;
+        address account = helperConfig.getConfigByChainId(block.chainid).account;
         return createSubscription(vrfCoordinatorV2_5, account);
     }
 
-    function createSubscription(
-        address vrfCoordinatorV2_5,
-        address account
-    ) public returns (uint256, address) {
+    function createSubscription(address vrfCoordinatorV2_5, address account) public returns (uint256, address) {
         console.log("Creating subscription on chainId: ", block.chainid);
         vm.startBroadcast(account);
-        uint256 subId = VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5)
-            .createSubscription();
+        uint256 subId = VRFCoordinatorV2_5Mock(vrfCoordinatorV2_5).createSubscription();
         vm.stopBroadcast();
         console.log("Your subscription Id is: ", subId);
         console.log("Please update the subscriptionId in HelperConfig.s.sol");
