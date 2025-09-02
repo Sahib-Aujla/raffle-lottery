@@ -66,28 +66,6 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         emit RaffleEntered(msg.sender);
     }
 
-    // function pickWinner() external {
-    //     if (block.timestamp - s_lastTimeStamp < i_interval) {
-    //         revert NotEnoughTimePassed();
-    //     }
-    //     s_raffleState = RaffleState.CALCULATING;
-    //     uint256 requestId = s_vrfCoordinator.requestRandomWords(
-    //         VRFV2PlusClient.RandomWordsRequest({
-    //             keyHash: i_gasLane,
-    //             subId: i_subscriptionId,
-    //             requestConfirmations: REQUEST_CONFIRMATIONS,
-    //             callbackGasLimit: i_callbackGasLimit,
-    //             numWords: NUM_WORDS,
-    //             extraArgs: VRFV2PlusClient._argsToBytes(
-    //                 // Set nativePayment to true to pay for VRF requests with Sepolia ETH instead of LINK
-    //                 VRFV2PlusClient.ExtraArgsV1({nativePayment: false})
-    //             )
-    //         })
-    //     );
-    //     emit RequestedRaffleWinner(requestId);
-    //     s_lastTimeStamp = block.timestamp;
-    // }
-
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual override {
         if (s_requestId != requestId) {
             revert();
