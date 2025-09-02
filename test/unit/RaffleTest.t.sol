@@ -64,6 +64,15 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: raffleEntranceFee}();
     }
 
+    modifier setVmWarp() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: raffleEntranceFee}();
+        vm.warp(block.timestamp + automationUpdateInterval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+        _;
+    }
+
     function testDontAllowPlayersToEnterWhileRaffleIsCalculating() public {
         // Arrange
         vm.prank(PLAYER);
@@ -77,5 +86,11 @@ contract RaffleTest is Test {
         vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
         vm.prank(PLAYER);
         raffle.enterRaffle{value: raffleEntranceFee}();
+    }
+
+    //test CheckUpKeep
+    function testCheckUpKeepReturnFalse() external setVmWarp {
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        assert(!upkeepNeeded);
     }
 }
