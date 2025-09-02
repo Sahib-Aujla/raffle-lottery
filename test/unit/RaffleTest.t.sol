@@ -6,6 +6,7 @@ import {Test} from "forge-std/Test.sol";
 import {Raffle} from "../../src/Raffle.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 contract RaffleTest is Test {
     Raffle raffle;
@@ -69,7 +70,7 @@ contract RaffleTest is Test {
         raffle.enterRaffle{value: raffleEntranceFee}();
         vm.warp(block.timestamp + automationUpdateInterval + 1);
         vm.roll(block.number + 1);
-        raffle.performUpkeep("");
+
         _;
     }
 
@@ -90,7 +91,71 @@ contract RaffleTest is Test {
 
     //test CheckUpKeep
     function testCheckUpKeepReturnFalse() external setVmWarp {
+        raffle.performUpkeep("");
         (bool upkeepNeeded,) = raffle.checkUpkeep("");
         assert(!upkeepNeeded);
     }
+
+    function testCheckUpKeedReturnTrue() external setVmWarp {
+        (bool upkeepNeeded,) = raffle.checkUpkeep("");
+        assert(upkeepNeeded);
+    }
+
+    function testPerformUpkeepRequestId() external setVmWarp {
+        vm.recordLogs();
+        raffle.performUpkeep(""); // emits requestId
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[1];
+
+        // Assert
+        Raffle.RaffleState raffleState = raffle.getRaffleState();
+        // requestId = raffle.getLastRequestId();
+        assert(uint256(requestId) > 0);
+        assert(uint256(raffleState) == 1);
+    }
+
+    function testGetRaffleState() external view {
+        Raffle.RaffleState state = raffle.getRaffleState();
+        assert(Raffle.RaffleState.OPEN == state);
+    }
+
+    function testGetNumWords() external view {
+        uint256 num = raffle.getNumWords();
+        assertEq(num, 1);
+    }
+
+    function testGetRequestConfirmations() external view {
+        uint256 num = raffle.getRequestConfirmations();
+        assertEq(num, 3);
+    }
+
+    function testGetRecentWinner() external view {
+        address recentWinner = raffle.getRecentWinner();
+        assertEq(recentWinner, address(0));
+    }
+
+    function testGetPlayer() external setVmWarp {
+        address addres = raffle.getPlayer(0);
+        assertEq(addres, PLAYER);
+    }
+
+    function testGetLastTimeStamp() external view {
+        uint256 timeStamp = raffle.getLastTimeStamp();
+        assertEq(timeStamp, block.timestamp);
+    }
+
+    function testGetInterval() external view {
+        assertEq(raffle.getInterval(), automationUpdateInterval);
+    }
+
+    function testGetEntranceFee() external view {
+        assertEq(raffle.getEntranceFee(), raffleEntranceFee);
+    }
+
+    function testGetNumberOfPlayers() external view {
+        assertEq(raffle.getNumberOfPlayers(), 0);
+    }
+
+    //fulfill Random Words
+    function testFulfillRandomWords() external setVmWarp {}
 }
