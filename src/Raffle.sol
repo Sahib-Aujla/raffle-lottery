@@ -59,6 +59,9 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         if (msg.value < i_entranceFee) {
             revert NotEnoughEthSent();
         }
+        if (RaffleState.OPEN != s_raffleState) {
+            revert Raffle__RaffleNotOpen();
+        }
         s_players.push(payable(msg.sender));
         emit RaffleEntered(msg.sender);
     }

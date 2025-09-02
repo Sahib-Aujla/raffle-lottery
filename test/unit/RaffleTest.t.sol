@@ -73,6 +73,7 @@ contract RaffleTest is Test {
         raffle.performUpkeep("");
 
         // Act / Assert
+        //assert(raffle.getRaffleState()==Raffle.RaffleState.CALCULATING);
         vm.expectRevert(Raffle.Raffle__RaffleNotOpen.selector);
         vm.prank(PLAYER);
         raffle.enterRaffle{value: raffleEntranceFee}();
