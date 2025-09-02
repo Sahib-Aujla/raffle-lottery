@@ -10,6 +10,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error NotEnoughEthSent();
     //error NotEnoughTimePassed();
     error Raffle__RaffleNotOpen();
+    error FailedTranferMoney();
 
     enum RaffleState {
         OPEN,
@@ -66,10 +67,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         emit RaffleEntered(msg.sender);
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal virtual override {
-        if (s_requestId != requestId) {
-            revert();
-        }
+    function fulfillRandomWords(uint256, /*requestId*/ uint256[] calldata randomWords) internal virtual override {
         uint256 indexedWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexedWinner];
 
@@ -81,7 +79,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
 
         (bool success,) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
-            revert();
+            revert FailedTranferMoney();
         }
     }
 
